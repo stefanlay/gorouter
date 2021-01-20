@@ -125,6 +125,7 @@ func NewProxy(
 			DisableCompression:  true,
 			TLSClientConfig:     routeServiceTLSConfig,
 		},
+		IsInstrumented: cfg.PerRequestMetricsReporting,
 	}
 
 	prt := round_tripper.NewProxyRoundTripper(
@@ -164,7 +165,9 @@ func NewProxy(
 	n.Use(handlers.NewRequestInfo())
 	n.Use(handlers.NewProxyWriter(logger))
 	n.Use(handlers.NewVcapRequestIdHeader(logger))
-	n.Use(handlers.NewHTTPStartStop(dropsonde.DefaultEmitter, logger))
+	if cfg.PerRequestMetricsReporting {
+		n.Use(handlers.NewHTTPStartStop(dropsonde.DefaultEmitter, logger))
+	}
 	n.Use(handlers.NewAccessLog(accessLogger, headersToLog, logger))
 	n.Use(handlers.NewReporter(reporter, logger))
 	n.Use(handlers.NewHTTPRewriteHandler(cfg.HTTPRewrite, headersToAlwaysRemove))
